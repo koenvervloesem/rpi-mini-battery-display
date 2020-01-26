@@ -56,7 +56,7 @@ optional arguments:
 
 ## Changelog
 
-* 0.0.1 (2020-01-26): Initial version
+* 0.1.0 (2020-01-26): Initial version
 
 ## TODO
 
