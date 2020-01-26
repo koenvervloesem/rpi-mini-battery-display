@@ -39,7 +39,7 @@ setup(
         "Development Status :: 3 - Alpha",
     ],
     keywords=["tm1651", "raspberry pi", "rpi", "display", "gpio", "led"],
-    description="Control 10-segment mini battery displays based on the TM1651 chip on a Raspberry Pi",
+    description="Control 10-segment mini battery displays on a Raspberry Pi",
     long_description=long_description,
     long_description_content_type="text/markdown",
     python_requires=">=3",
