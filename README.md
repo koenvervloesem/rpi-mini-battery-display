@@ -9,7 +9,7 @@ Library and command-line program to control 10-segment mini battery displays bas
 
 ## System requirements
 
-The rpi-mini-battery-display library is written to run on a Raspberry Pi. It uses the [RPi.GPIO](https://pypi.org/project/RPi.GPIO/) library to communicate with the TM1651 chip.
+The rpi-mini-battery-display library is written to run on a Raspberry Pi. It uses the [RPi.GPIO](https://pypi.org/project/RPi.GPIO/) library to communicate with the TM1651 chip and is tested on Python 3.6 and higher.
 
 ## Installation
 
