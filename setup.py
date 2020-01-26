@@ -40,7 +40,7 @@ setup(
         "Programming Language :: Python :: 3.8",
         "License :: OSI Approved :: MIT License",
     ],
-    keywords=["tm1651", "raspberry pi", "rpi", "display", "gpio", "led"],
+    keywords=["tm1651", "raspberry-pi", "rpi", "rpi-gpio", "display", "gpio", "led"],
     description="Control 10-segment mini battery displays on a Raspberry Pi",
     long_description=long_description,
     long_description_content_type="text/markdown",
