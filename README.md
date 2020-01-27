@@ -89,6 +89,11 @@ This was actually my motivation to develop the rpi-mini-battery-display library.
 * Support other versions of the mini battery displays based on the TM1651 chip, for instance [the 5-segment one](https://aliexpress.com/item/2025558433.html).
 * Support other mini battery displays, such as the [Grove LED Bar](https://wiki.seeedstudio.com/Grove-LED_Bar/), which uses the MY9221 chip.
 
+## Developer notes
+
+* The TM1651 is one of a series of LED driver control chips by Titan Micro Electronics. Other popular similar chips of the same manufacturer are the TM1637 and TM1640.
+* [English datasheet of the TM1651](http://aitendo3.sakura.ne.jp/aitendo_data/product_img/ic/LED-driver/TM1651_%20V1.2/TM1651_V1.1_EN.pdf)
+
 ## License
 
 This project is provided by [Koen Vervloesem](mailto:koen@vervloesem.eu) as open source software with the MIT license. See the LICENSE file for more information.
