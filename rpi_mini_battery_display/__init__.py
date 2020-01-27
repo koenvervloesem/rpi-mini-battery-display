@@ -175,8 +175,9 @@ class BatteryDisplay:
         sleep(TM1651_DELAY)
 
         ack = GPIO.input(self.data_pin)
+        GPIO.setup(self.data_pin, GPIO.OUT)
+
         if not ack:
-            GPIO.setup(self.data_pin, GPIO.OUT)
             GPIO.output(self.data_pin, GPIO.LOW)
 
         sleep(TM1651_DELAY)

@@ -9,11 +9,23 @@ Library and command-line program to control 10-segment mini battery displays bas
 
 ## System requirements
 
-The rpi-mini-battery-display library is written to run on a Raspberry Pi. It uses the [RPi.GPIO](https://pypi.org/project/RPi.GPIO/) library to communicate with the TM1651 chip and is tested on Raspbian Buster with Python 3.7.
+The rpi-mini-battery-display library is written to run on a Raspberry Pi. It has been tested on Raspbian Buster (10) with Python 3.7.
+
+If you don't have pip, install it first with:
+
+```shell
+sudo apt install python3-pip
+```
+
+This library uses the [RPi.GPIO](https://pypi.org/project/RPi.GPIO/) library to communicate with the TM1651 chip. The default user `pi` in Raspbian has already the right permissions for GPIO access. If you want to use the library as another user, the user needs to be in the `gpio` group to have the right permissions. This can be done with:
+
+```shell
+sudo adduser <username> gpio
+```
 
 ## Installation
 
-```python
+```shell
 sudo pip3 install rpi-mini-battery-display
 ```
 
