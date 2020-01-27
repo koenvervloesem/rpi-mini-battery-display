@@ -1,4 +1,9 @@
-"""Command-line program to control the 10 LED mini battery display."""
+"""Command-line program to control the 10 LED mini battery display.
+
+Copyright (C) 2020 Koen Vervloesem
+
+SPDX-License-Identifier: MIT
+"""
 import argparse
 import sys
 from time import sleep

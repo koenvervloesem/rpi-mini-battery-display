@@ -1,4 +1,9 @@
-"""Setup script for rpi-mini-battery-display package"""
+"""Setup script for the rpi-mini-battery-display package.
+
+Copyright (C) 2020 Koen Vervloesem
+
+SPDX-License-Identifier: MIT
+"""
 # pragma pylint: disable=invalid-name
 from pathlib import Path
 

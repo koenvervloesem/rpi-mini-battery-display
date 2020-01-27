@@ -1,4 +1,9 @@
-"""Library for the 10 LED mini battery display using the TM1651 chip."""
+"""Library for the 10 LED mini battery display using the TM1651 chip.
+
+Copyright (C) 2020 Koen Vervloesem
+
+SPDX-License-Identifier: MIT
+"""
 # pragma pylint: disable=no-member
 from time import sleep
 
