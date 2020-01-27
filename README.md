@@ -20,7 +20,7 @@ sudo apt install python3-pip
 This library uses the [RPi.GPIO](https://pypi.org/project/RPi.GPIO/) library to communicate with the TM1651 chip. The default user `pi` in Raspbian has already the right permissions for GPIO access. If you want to use the library as another user, the user needs to be in the `gpio` group to have the right permissions. This can be done with:
 
 ```shell
-sudo adduser <username> gpio
+sudo adduser $USER gpio
 ```
 
 ## Installation
