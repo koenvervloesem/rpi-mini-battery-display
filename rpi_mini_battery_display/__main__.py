@@ -57,7 +57,7 @@ def main():
         elif args.processor:
             while True:
                 # Map a percentage from 0 to 100 to a level from 0 to 7
-                display.set_level(max(int(cpu_percent() / 12.5, 7)))
+                display.set_level(min(int(cpu_percent() / 12.5, 7)))
                 sleep(2)
     except InvalidPinError as error:
         print("Invalid pin number: {}. {}".format(error.pin, str(error)))
