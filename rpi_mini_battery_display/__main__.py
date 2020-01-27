@@ -1,7 +1,9 @@
 """Command-line program to control the 10 LED mini battery display."""
 import argparse
 import sys
+from time import sleep
 
+from psutil import cpu_percent
 from RPi.GPIO import cleanup  # pylint: disable=no-name-in-module
 
 from . import BatteryDisplay, InvalidBrightnessError, InvalidLevelError, InvalidPinError
@@ -34,14 +36,26 @@ def main():
         default=2,
         help="Brightness (default: 2, range: 0-7)",
     )
-    parser.add_argument("level", type=int, help="Battery level (range: 0-7)")
+
+    command = parser.add_mutually_exclusive_group(required=True)
+
+    command.add_argument(
+        "-l", "--level", type=int, help="Set battery level (range: 0-7)"
+    )
+    command.add_argument("-p", "--processor", help="Show CPU percentage")
+
     args = parser.parse_args()
 
     exit_code = 0
     try:
         display = BatteryDisplay(args.clock_pin, args.data_pin)
         display.set_brightness(args.brightness)
-        display.set_level(args.level)
+        if args.level:
+            display.set_level(args.level)
+        elif args.processor:
+            while True:
+                display.set_level(int(cpu_percent()))
+                sleep(5)
     except InvalidPinError as error:
         print("Invalid pin number: {}. {}".format(error.pin, str(error)))
         exit_code = 1
