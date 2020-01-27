@@ -84,6 +84,7 @@ This was actually my motivation to develop the rpi-mini-battery-display library.
 
 * Code refactoring, as this project currently is a rather direct Python port of the original C++/Arduino code that came with the mini battery display I bought on AliExpress.
 * Individually address the LED segments instead of only using them as a LED bar (fairly trivial, I already played with it but haven't implemented the necessary method yet).
+* Add the possibility to switch the direction of the LED bar.
 * Add static typing with [mypy](http://mypy-lang.org/).
 * Support other versions of the mini battery displays based on the TM1651 chip, for instance [the 5-segment one](https://aliexpress.com/item/2025558433.html).
 * Support other mini battery displays, such as the [Grove LED Bar](https://wiki.seeedstudio.com/Grove-LED_Bar/), which uses the MY9221 chip.
