@@ -67,6 +67,14 @@ optional arguments:
   -p, --processor       Show CPU percentage
 ```
 
+## Use cases
+
+These displays are handy in every situation where you want to show a status on a Raspberry Pi on a low budget. For instance, I'm using them to show the CPU load of every Raspberry Pi in my six-node cluster:
+
+![Six displays](six-displays.jpg)
+
+This was actually my motivation to develop the rpi-mini-battery-display library.
+
 ## Changelog
 
 * 0.2.0 (2020-01-27): Added option to show the CPU percentage
