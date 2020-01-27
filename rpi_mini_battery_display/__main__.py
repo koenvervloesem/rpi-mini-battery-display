@@ -42,7 +42,9 @@ def main():
     command.add_argument(
         "-l", "--level", type=int, help="Set battery level (range: 0-7)"
     )
-    command.add_argument("-p", "--processor", help="Show CPU percentage")
+    command.add_argument(
+        "-p", "--processor", action="store_true", help="Show CPU percentage"
+    )
 
     args = parser.parse_args()
 
