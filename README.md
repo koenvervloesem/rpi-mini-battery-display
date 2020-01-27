@@ -46,15 +46,13 @@ The CLK and DIO pin can be connected to other pins on the Raspberry Pi, but thes
 
 ## Usage
 
+You can use the `rpi-mini-battery-display` program to set the level of the battery display from 0 to 7 or to let it show the CPU percentage as a level from 0 (less than 12.5%) to 7 (more than 87.5%):
+
 ```shell
 usage: rpi-mini-battery-display [-h] [-c CLOCK_PIN] [-d DATA_PIN]
-                                [-b BRIGHTNESS]
-                                level
+                                [-b BRIGHTNESS] (-l LEVEL | -p)
 
 Control a 10 LED mini battery display with TM1651 chip
-
-positional arguments:
-  level                 Battery level (range: 0-7)
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -64,10 +62,14 @@ optional arguments:
                         Data pin in BCM notation (default: 23, range: 0-27)
   -b BRIGHTNESS, --brightness BRIGHTNESS
                         Brightness (default: 2, range: 0-7)
+  -l LEVEL, --level LEVEL
+                        Set battery level (range: 0-7)
+  -p, --processor       Show CPU percentage
 ```
 
 ## Changelog
 
+* 0.2.0 (2020-01-27): Added option to show the CPU percentage
 * 0.1.0 (2020-01-26): Initial version
 
 ## TODO
