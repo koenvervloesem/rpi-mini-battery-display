@@ -4,10 +4,11 @@ Copyright (C) 2020 Koen Vervloesem
 
 SPDX-License-Identifier: MIT
 """
-# pragma pylint: disable=no-member
+# pragma pylint: disable=no-member,no-name-in-module
 from time import sleep
 
 import RPi.GPIO as GPIO
+from RPi.GPIO import HIGH, LOW
 
 LEVEL_TAB = [
     0x00,  #
@@ -28,7 +29,7 @@ ADDR_AUTO = 0x40
 ADDR_FIXED = 0x44
 STARTADDR = 0xC0
 
-TM1651_DELAY = 0.000050  # 50 microseconds
+TM1651_CYCLE = 0.000050  # 50 microseconds
 
 
 class InvalidBrightnessError(Exception):
@@ -90,6 +91,14 @@ class BatteryDisplay:
 
         self.set_brightness(BRIGHT_TYPICAL)
         self.clear_display()
+
+    def set_clock(self, state):
+        """Set the state of the clock pin: HIGH or LOW."""
+        GPIO.output(self.clock_pin, state)
+
+    def set_data(self, state):
+        """Set the state of the data pin: HIGH or LOW."""
+        GPIO.output(self.data_pin, state)
 
     def set_brightness(self, brightness):
         """Set a command to take effect the next time it displays.
@@ -153,18 +162,18 @@ class BatteryDisplay:
         for _ in range(8):
             # CLK low
             GPIO.output(self.clock_pin, GPIO.LOW)
-            sleep(TM1651_DELAY)
+            sleep(TM1651_CYCLE)
 
             # Write data bit
             if write_data & 0x01:
                 GPIO.output(self.data_pin, GPIO.HIGH)
             else:
                 GPIO.output(self.data_pin, GPIO.LOW)
-            sleep(TM1651_DELAY)
+            sleep(TM1651_CYCLE)
 
             # CLK high
             GPIO.output(self.clock_pin, GPIO.HIGH)
-            sleep(TM1651_DELAY)
+            sleep(TM1651_CYCLE)
 
             # Next bit
             write_data = write_data >> 1
@@ -172,12 +181,12 @@ class BatteryDisplay:
         # Wait for the ACK: CLK low, DIO high
         GPIO.output(self.clock_pin, GPIO.LOW)
         GPIO.output(self.data_pin, GPIO.HIGH)
-        sleep(TM1651_DELAY)
+        sleep(TM1651_CYCLE)
 
         # CLK high, set DIO to input
         GPIO.output(self.clock_pin, GPIO.HIGH)
         GPIO.setup(self.data_pin, GPIO.IN)
-        sleep(TM1651_DELAY)
+        sleep(TM1651_CYCLE)
 
         ack = GPIO.input(self.data_pin)
         GPIO.setup(self.data_pin, GPIO.OUT)
@@ -185,20 +194,35 @@ class BatteryDisplay:
         if not ack:
             GPIO.output(self.data_pin, GPIO.LOW)
 
-        sleep(TM1651_DELAY)
+        sleep(TM1651_CYCLE)
         GPIO.output(self.clock_pin, GPIO.LOW)
-        sleep(TM1651_DELAY)
+        sleep(TM1651_CYCLE)
+
+    def delineate_transmission(self, begin):
+        """Delineate a data transmission to the TM1651.
+
+        The begin parameter is a boolean with the start value of DIO.
+        """
+        # DIO changes its value while CLK is HIGH.
+        self.set_data(begin)
+        sleep(TM1651_CYCLE / 2)
+
+        self.set_clock(HIGH)
+        sleep(TM1651_CYCLE / 4)
+
+        self.set_data(not begin)
+        sleep(TM1651_CYCLE / 4)
 
     def start(self):
-        """Send start signal to TM1651."""
-        GPIO.output(self.data_pin, GPIO.LOW)
-        sleep(TM1651_DELAY)
+        """Start a data transmission to the TM1651."""
+        # DIO changes from HIGH to low while CLK is high.
+        # CLK ____████
+        # DIO ██████__
+        self.delineate_transmission(HIGH)
 
     def stop(self):
-        """End of transmission."""
-        GPIO.output(self.data_pin, GPIO.LOW)
-        sleep(TM1651_DELAY)
-        GPIO.output(self.clock_pin, GPIO.HIGH)
-        sleep(TM1651_DELAY)
-        GPIO.output(self.data_pin, GPIO.HIGH)
-        sleep(TM1651_DELAY)
+        """Stop a data transmission to the TM1651."""
+        # DIO changes from LOW to HIGH while CLK is HIGH.
+        # CLK ____████
+        # DIO ______██
+        self.delineate_transmission(LOW)
