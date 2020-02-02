@@ -161,30 +161,30 @@ class BatteryDisplay:
         # Send 8 data bits, LSB first
         for _ in range(8):
             # CLK low
-            GPIO.output(self.clock_pin, GPIO.LOW)
+            self.set_clock(LOW)
             sleep(TM1651_CYCLE)
 
             # Write data bit
             if write_data & 0x01:
-                GPIO.output(self.data_pin, GPIO.HIGH)
+                self.set_data(HIGH)
             else:
-                GPIO.output(self.data_pin, GPIO.LOW)
+                self.set_data(LOW)
             sleep(TM1651_CYCLE)
 
             # CLK high
-            GPIO.output(self.clock_pin, GPIO.HIGH)
+            self.set_clock(HIGH)
             sleep(TM1651_CYCLE)
 
             # Next bit
             write_data = write_data >> 1
 
         # Wait for the ACK: CLK low, DIO high
-        GPIO.output(self.clock_pin, GPIO.LOW)
-        GPIO.output(self.data_pin, GPIO.HIGH)
+        self.set_clock(LOW)
+        self.set_data(HIGH)
         sleep(TM1651_CYCLE)
 
         # CLK high, set DIO to input
-        GPIO.output(self.clock_pin, GPIO.HIGH)
+        self.set_clock(HIGH)
         GPIO.setup(self.data_pin, GPIO.IN)
         sleep(TM1651_CYCLE)
 
@@ -192,10 +192,10 @@ class BatteryDisplay:
         GPIO.setup(self.data_pin, GPIO.OUT)
 
         if not ack:
-            GPIO.output(self.data_pin, GPIO.LOW)
+            self.set_data(LOW)
 
         sleep(TM1651_CYCLE)
-        GPIO.output(self.clock_pin, GPIO.LOW)
+        self.set_clock(LOW)
         sleep(TM1651_CYCLE)
 
     def delineate_transmission(self, begin):
