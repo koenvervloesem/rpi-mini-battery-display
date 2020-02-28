@@ -11,8 +11,8 @@ from time import sleep
 from psutil import cpu_percent
 from RPi.GPIO import cleanup  # pylint: disable=no-name-in-module
 
-from . import (
-    BatteryDisplay,
+from rpi_mini_battery_display import BatteryDisplay
+from rpi_mini_battery_display.exceptions import (
     InvalidBrightnessError,
     InvalidLevelError,
     InvalidPinError,
