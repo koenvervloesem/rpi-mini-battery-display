@@ -11,7 +11,13 @@ from time import sleep
 from psutil import cpu_percent
 from RPi.GPIO import cleanup  # pylint: disable=no-name-in-module
 
-from . import BatteryDisplay, InvalidBrightnessError, InvalidLevelError, InvalidPinError
+from . import (
+    BatteryDisplay,
+    InvalidBrightnessError,
+    InvalidLevelError,
+    InvalidPinError,
+    NoDisplayFoundError,
+)
 
 
 def main():
@@ -73,6 +79,13 @@ def main():
     except InvalidLevelError as error:
         print("Invalid level: {}. {}".format(error.level, str(error)))
         exit_code = 3
+    except NoDisplayFoundError as error:
+        print(
+            "No display found on clock pin {} and data pin {}.".format(
+                error.clock_pin, error.data_pin
+            )
+        )
+        exit_code = 4
     finally:
         if exit_code != 1:
             cleanup()

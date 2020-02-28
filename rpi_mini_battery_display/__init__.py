@@ -75,6 +75,19 @@ class InvalidPinError(Exception):
         self.pin = pin
 
 
+class NoDisplayFoundError(Exception):
+    """Exception raised when there's no display found."""
+
+    def __init__(self, clock_pin, data_pin, message=None):
+        """Initialize exception."""
+        if message is None:
+            message = "No display found."
+        super().__init__(message)
+
+        self.clock_pin = clock_pin
+        self.data_pin = data_pin
+
+
 class BatteryDisplay:
     """Class to control the TM1651 battery display.
 
@@ -106,7 +119,12 @@ class BatteryDisplay:
         GPIO.setup(data_pin, OUT)
 
         self.set_brightness(BRIGHT_TYPICAL)
-        self.clear_display()
+        ack = self.clear_display()
+
+        # If the TM1651 hasn't returned an ACK,
+        # assume that no LED controller is connected on these pins.
+        if not ack:
+            raise NoDisplayFoundError(clock_pin, data_pin)
 
     def set_clock(self, state):
         """Set the state of the clock pin: HIGH or LOW."""
@@ -125,68 +143,107 @@ class BatteryDisplay:
         self.brightness = brightness
 
     def send_command(self, *data):
-        """Send a command and optional data to the TM1651."""
+        """Send a command and optional data to the TM1651.
+
+        Returns True if the TM1651 has sent an ACK after each written byte."""
+        ack = True
+
         self.start()
         for byte in data:
-            self.write_byte(byte)
+            ack = self.write_byte(byte) and ack
         self.stop()
 
+        return ack
+
     def clear_display(self):
-        """Clear the display."""
-        self.set_level(0)
+        """Clear the display.
+
+        Returns True if the TM1651 has sent an ACK after the write."""
+        return self.set_level(0)
 
     def set_level(self, level):
         """Display a level on the battery display.
 
-        level should be an integer from 0 to 7."""
+        level should be an integer from 0 to 7.
+
+        Returns True if the TM1651 has sent an ACK after every write."""
         if level not in range(8):
             raise InvalidLevelError(level)
 
-        self.send_command(ADDR_FIXED)
-        self.send_command(ADDR_START, LEVEL_TAB[level])
-        self.send_command(DISPLAY_ON + self.brightness)
+        ack = True
 
-    def write_byte(self, write_data):
-        """Write a byte to the TM1651."""
-        # Send 8 data bits, LSB first
-        for _ in range(8):
-            # CLK low
-            self.set_clock(LOW)
-            sleep(TM1651_CYCLE)
+        ack = self.send_command(ADDR_FIXED) and ack
+        ack = self.send_command(ADDR_START, LEVEL_TAB[level]) and ack
+        ack = self.send_command(DISPLAY_ON + self.brightness) and ack
 
-            # Write data bit
-            if write_data & 0x01:
-                self.set_data(HIGH)
-            else:
-                self.set_data(LOW)
-            sleep(TM1651_CYCLE)
+        return ack
 
-            # CLK high
-            self.set_clock(HIGH)
-            sleep(TM1651_CYCLE)
-
-            # Next bit
-            write_data = write_data >> 1
-
-        # Wait for the ACK: CLK low, DIO high
+    def half_cycle_clock_low(self, write_data):
+        """Start the first half cycle when the clock is low and write a data bit."""
         self.set_clock(LOW)
-        self.set_data(HIGH)
-        sleep(TM1651_CYCLE)
+        sleep(TM1651_CYCLE / 4)
 
-        # CLK high, set DIO to input
+        self.set_data(write_data)
+        sleep(TM1651_CYCLE / 4)
+
+    def half_cycle_clock_high(self):
+        """Start the second half cycle when the clock is high."""
+
         self.set_clock(HIGH)
+        sleep(TM1651_CYCLE / 2)
+
+    def half_cycle_clock_high_ack(self):
+        """Start the second half cycle when the clock is high and check for the ack.
+
+        Returns the ack bit (should be LOW)."""
+
+        # Set CLK high.
+        self.set_clock(HIGH)
+        sleep(TM1651_CYCLE / 4)
+
+        # Set DIO to input mode and check the ack.
         GPIO.setup(self.data_pin, IN)
-        sleep(TM1651_CYCLE)
-
         ack = GPIO.input(self.data_pin)
-        GPIO.setup(self.data_pin, OUT)
 
+        # ack (DIO) should be LOW now
+        # Now we have to set it to LOW ourselves before the TM1651
+        # releases the port line at the next clock cycle.
+        GPIO.setup(self.data_pin, OUT)
         if not ack:
             self.set_data(LOW)
 
-        sleep(TM1651_CYCLE)
+        sleep(TM1651_CYCLE / 4)
+        # Set CLK to low again so it can begin the next cycle.
         self.set_clock(LOW)
-        sleep(TM1651_CYCLE)
+
+        return ack
+
+    def write_byte(self, write_data):
+        """Write a byte to the TM1651.
+
+        Returns True if the TM1651 has sent an ack after the write."""
+        # Send 8 data bits, LSB first.
+        # A data bit can only be written to DIO when CLK is LOW.
+        # E.g. write 1 to DIO:
+        # CLK ____████
+        # DIO __██████
+        for _ in range(8):
+            self.half_cycle_clock_low(write_data & 0x01)
+            self.half_cycle_clock_high()
+
+            # Take the next bit.
+            write_data >>= 1
+
+        # After writing 8 bits, start a 9th clock ycle.
+        # During the 9th half-cycle of CLK when it is LOW,
+        # if we set DIO to HIGH the TM1651 gives an ack by
+        # pulling DIO LOW:
+        # CLK ____████
+        # DIO __█_____
+        # Set CLK low, DIO high.
+        self.half_cycle_clock_low(HIGH)
+        # Return True if the ACK was LOW.
+        return not self.half_cycle_clock_high_ack()
 
     def delineate_transmission(self, begin):
         """Delineate a data transmission to the TM1651.
