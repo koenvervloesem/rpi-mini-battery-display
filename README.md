@@ -71,7 +71,7 @@ optional arguments:
 
 These displays are handy in every situation where you want to show a status on a Raspberry Pi on a low budget. For instance, I'm using them to show the CPU load of every Raspberry Pi in my six-node cluster:
 
-![Six displays](six-displays.jpg)
+![Six displays](https://github.com/koenvervloesem/rpi-mini-battery-display/raw/master/six-displays.jpg)
 
 This was actually my motivation to develop the rpi-mini-battery-display library.
 
