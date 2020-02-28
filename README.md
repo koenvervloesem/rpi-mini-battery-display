@@ -77,12 +77,12 @@ This was actually my motivation to develop the rpi-mini-battery-display library.
 
 ## Changelog
 
+* 0.3.0 (2020-02-28): Refactored code from rather C++/Arduino-like to something more Pythonic
 * 0.2.0 (2020-01-27): Added option to show the CPU percentage
 * 0.1.0 (2020-01-26): Initial version
 
 ## TODO
 
-* Code refactoring, as this project currently is a rather direct Python port of the original C++/Arduino code that came with the mini battery display I bought on AliExpress.
 * Individually address the LED segments instead of only using them as a LED bar (fairly trivial, I already played with it but haven't implemented the necessary method yet).
 * Add the possibility to switch the direction of the LED bar.
 * Add static typing with [mypy](http://mypy-lang.org/).

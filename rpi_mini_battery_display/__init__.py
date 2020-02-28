@@ -5,6 +5,7 @@ Copyright (C) 2020 Koen Vervloesem
 SPDX-License-Identifier: MIT
 """
 # pragma pylint: disable=no-member,no-name-in-module
+from enum import IntEnum
 from time import sleep
 
 import RPi.GPIO as GPIO
@@ -28,22 +29,34 @@ LEVEL_TAB = [
     0x7F,  # 0123456789
 ]
 
-BRIGHT_DARKEST = 0
-BRIGHT_TYPICAL = 2
-BRIGHTEST = 7
-
-# Chip commands
-# Data commands
-ADDR_FIXED = 0x44  # Set fixed address mode
-# Display control commands
-DISPLAY_OFF = 0x80  # Set display off
-DISPLAY_ON = 0x88  # Set display on
-# Address commands
-ADDR_START = 0xC0  # Set address of the display register
-
 # The TM1651's maximum frequency is 500 kHz with a 50% duty cycle.
 # We take a conservative clock cycle here.
 TM1651_CYCLE = 0.000050  # 50 microseconds
+
+
+class Command(IntEnum):
+    """An enumeration of commands for the display."""
+
+    # Data commands
+    ADDR_FIXED = 0x44  # Set fixed address mode
+    # Display control commands
+    DISPLAY_OFF = 0x80  # Set display off
+    DISPLAY_ON = 0x88  # Set display on
+    # Address commands
+    ADDR_START = 0xC0  # Set address of the display register
+
+
+class Brightness(IntEnum):
+    """An enumeration of brightness values for the display."""
+
+    DARKEST = 0  # 0 is actually not off!
+    DARKER = 1
+    DARK = 2
+    TYPICAL = 3
+    SEMI_BRIGHT = 4
+    BRIGHT = 5
+    BRIGHTER = 6
+    BRIGHTEST = 7
 
 
 class BatteryDisplay:
@@ -76,7 +89,7 @@ class BatteryDisplay:
         GPIO.setup(clock_pin, OUT)
         GPIO.setup(data_pin, OUT)
 
-        self.set_brightness(BRIGHT_TYPICAL)
+        self.set_brightness(Brightness.DARK)
         ack = self.clear_display()
 
         # If the TM1651 hasn't returned an ACK,
@@ -130,9 +143,9 @@ class BatteryDisplay:
 
         ack = True
 
-        ack = self.send_command(ADDR_FIXED) and ack
-        ack = self.send_command(ADDR_START, LEVEL_TAB[level]) and ack
-        ack = self.send_command(DISPLAY_ON + self.brightness) and ack
+        ack = self.send_command(Command.ADDR_FIXED) and ack
+        ack = self.send_command(Command.ADDR_START, LEVEL_TAB[level]) and ack
+        ack = self.send_command(Command.DISPLAY_ON + self.brightness) and ack
 
         return ack
 
