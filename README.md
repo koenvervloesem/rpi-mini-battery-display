@@ -5,11 +5,11 @@
 [![Python versions](https://img.shields.io/pypi/pyversions/rpi-mini-battery-display.svg)](https://www.python.org)
 [![GitHub license](https://img.shields.io/github/license/koenvervloesem/rpi-mini-battery-display.svg)](https://github.com/koenvervloesem/rpi-mini-battery-display/blob/master/LICENSE)
 
-Library and command-line program to control 10-segment mini battery displays based on the TM1651 chip, such as [the ones from Open-Smart](https://aliexpress.com/item/32789343210.html), on a Raspberry Pi.
+Library and command-line program to control mini battery displays based on the TM1651 or TM1637 chip, such as [the ones from Open-Smart](https://aliexpress.com/item/32789343210.html), on a Raspberry Pi.
 
 ## System requirements
 
-The rpi-mini-battery-display library is written to run on a Raspberry Pi. It has been tested on Raspbian Buster (10) with Python 3.7.
+The rpi-mini-battery-display library is written to run on a Raspberry Pi. It has been tested on Raspberry Pi OS Buster (10) with Python 3.7.
 
 If you don't have pip, install it first with:
 
@@ -17,7 +17,7 @@ If you don't have pip, install it first with:
 sudo apt install python3-pip
 ```
 
-This library uses the [RPi.GPIO](https://pypi.org/project/RPi.GPIO/) library to communicate with the TM1651 chip. The default user `pi` in Raspbian has already the right permissions for GPIO access. If you want to use the library as another user, the user needs to be in the `gpio` group to have the right permissions. This can be done with:
+This library uses the [RPi.GPIO](https://pypi.org/project/RPi.GPIO/) library to communicate with the TM1651 or TM1637 chip. The default user `pi` in Raspberry Pi OS has already the right permissions for GPIO access. If you want to use the library as another user, the user needs to be in the `gpio` group to have the right permissions. This can be done with:
 
 ```shell
 sudo adduser $USER gpio
@@ -52,7 +52,7 @@ You can use the `rpi-mini-battery-display` program to set the level of the batte
 usage: rpi-mini-battery-display [-h] [-c CLOCK_PIN] [-d DATA_PIN]
                                 [-b BRIGHTNESS] (-l LEVEL | -p)
 
-Control a 10 LED mini battery display with TM1651 chip
+Control a mini battery display with TM1651 or TM1637 chip
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -63,7 +63,7 @@ optional arguments:
   -b BRIGHTNESS, --brightness BRIGHTNESS
                         Brightness (default: 2, range: 0-7)
   -l LEVEL, --level LEVEL
-                        Set battery level (range: 0-7)
+                        Set battery level (range: 0-8)
   -p, --processor       Show CPU percentage
 ```
 
@@ -86,12 +86,11 @@ This was actually my motivation to develop the rpi-mini-battery-display library.
 * Individually address the LED segments instead of only using them as a LED bar (fairly trivial, I already played with it but haven't implemented the necessary method yet).
 * Add the possibility to switch the direction of the LED bar.
 * Add static typing with [mypy](http://mypy-lang.org/).
-* Support other versions of the mini battery displays based on the TM1651 chip, for instance [the 5-segment one](https://aliexpress.com/item/2025558433.html).
 * Support other mini battery displays, such as the [Grove LED Bar](https://wiki.seeedstudio.com/Grove-LED_Bar/), which uses the MY9221 chip.
 
 ## Developer notes
 
-* The TM1651 is one of a series of LED driver control chips by Titan Micro Electronics. Other popular similar chips of the same manufacturer are the TM1637 and TM1640.
+* The TM1651 and TM1637 are part of a series of LED driver control chips by Titan Micro Electronics, commonly used to drive displays in microwave ovens and small household appliances. For the purpose of this project, the only relevant difference is that the TM1651 can drive 7 LED segments, while the TM1637 can drive 8. Note that the Open-Smart mini battery display has a 10-segment LED display, while the TM1651 can only drive 7: on this board this is solved by driving some of the segments together.
 * [English datasheet of the TM1651](http://aitendo3.sakura.ne.jp/aitendo_data/product_img/ic/LED-driver/TM1651_%20V1.2/TM1651_V1.1_EN.pdf)
 
 ## License

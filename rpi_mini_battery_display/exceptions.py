@@ -1,6 +1,6 @@
 """Exceptions for the rpi-mini-battery-display library.
 
-Copyright (C) 2020 Koen Vervloesem
+Copyright (C) 2020-2021 Koen Vervloesem
 
 SPDX-License-Identifier: MIT
 """
@@ -28,7 +28,7 @@ class InvalidLevelError(BatteryDisplayError):
     def __init__(self, level, message=None):
         """Initialize exception."""
         if message is None:
-            message = "Level should be a number from 0 to 7."
+            message = "Level should be a number from 0 to the number of LED segments."
         super().__init__(message)
 
         self.level = level
@@ -44,6 +44,19 @@ class InvalidPinError(BatteryDisplayError):
         super().__init__(message)
 
         self.pin = pin
+
+
+class InvalidSegmentsError(BatteryDisplayError):
+    """Exception raised when we are asked to initialize a display with an invalid number
+    of LED segments."""
+
+    def __init__(self, segments, message=None):
+        """Initialize exception."""
+        if message is None:
+            message = "Number of LED segments should be a number from 1 to 8."
+        super().__init__(message)
+
+        self.segments = segments
 
 
 class NoDisplayFoundError(BatteryDisplayError):

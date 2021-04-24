@@ -1,6 +1,6 @@
-"""Command-line program to control the 10 LED mini battery display.
+"""Command-line program to control a mini battery display.
 
-Copyright (C) 2020 Koen Vervloesem
+Copyright (C) 2020-2021 Koen Vervloesem
 
 SPDX-License-Identifier: MIT
 """
@@ -16,6 +16,7 @@ from rpi_mini_battery_display.exceptions import (
     InvalidBrightnessError,
     InvalidLevelError,
     InvalidPinError,
+    InvalidSegmentsError,
     NoDisplayFoundError,
 )
 
@@ -24,7 +25,7 @@ def main():
     """Main method."""
     parser = argparse.ArgumentParser(
         prog="rpi-mini-battery-display",
-        description="Control a 10 LED mini battery display with TM1651 chip",
+        description="Control a mini battery display with TM1651 or TM1637 chip",
     )
     parser.add_argument(
         "-c",
@@ -47,11 +48,18 @@ def main():
         default=2,
         help="Brightness (default: 2, range: 0-7)",
     )
+    parser.add_argument(
+        "-s",
+        "--segments",
+        type=int,
+        default=7,
+        help="Number of LED segments (default: 7, range: 1-7)",
+    )
 
     command = parser.add_mutually_exclusive_group(required=True)
 
     command.add_argument(
-        "-l", "--level", type=int, help="Set battery level (range: 0-7)"
+        "-l", "--level", type=int, help="Set battery level (range: 0-segments)"
     )
     command.add_argument(
         "-p", "--processor", action="store_true", help="Show CPU percentage"
@@ -61,14 +69,16 @@ def main():
 
     exit_code = 0
     try:
-        display = BatteryDisplay(args.clock_pin, args.data_pin)
+        display = BatteryDisplay(args.clock_pin, args.data_pin, args.segments)
         display.set_brightness(args.brightness)
         if args.level:
             display.set_level(args.level)
         elif args.processor:
             while True:
-                # Map a percentage from 0 to 100 to a level from 0 to 7
-                display.set_level(min(int(cpu_percent() / 12.5), 7))
+                # Map a percentage from 0 to 100 to a level from 0 to number of segments
+                display.set_level(
+                    min(int(cpu_percent() / 100 * (args.segments + 1)), args.segments)
+                )
                 sleep(2)
     except InvalidPinError as error:
         print("Invalid pin number: {}. {}".format(error.pin, str(error)))
@@ -86,6 +96,9 @@ def main():
             )
         )
         exit_code = 4
+    except InvalidSegmentsError as error:
+        print("Invalid number of segments: {}. {}".format(error.segments, str(error)))
+        exit_code = 5
     finally:
         if exit_code != 1:
             cleanup()
