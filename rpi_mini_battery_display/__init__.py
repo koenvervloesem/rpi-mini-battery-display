@@ -1,6 +1,6 @@
-"""Library for the 10 LED mini battery display using the TM1651 chip.
+"""Library for a mini battery display using the TM1651 or TM1637 chip.
 
-Copyright (C) 2020 Koen Vervloesem
+Copyright (C) 2020-2021 Koen Vervloesem
 
 SPDX-License-Identifier: MIT
 """
@@ -15,23 +15,24 @@ from rpi_mini_battery_display.exceptions import (
     InvalidBrightnessError,
     InvalidLevelError,
     InvalidPinError,
+    InvalidSegmentsError,
     NoDisplayFoundError,
 )
 
 LEVEL_TAB = [
-    0x00,  #
-    0x01,  # 01
-    0x03,  # 012
-    0x07,  # 0123
-    0x0F,  # 01234
-    0x1F,  # 0123456
-    0x3F,  # 012345678
-    0x7F,  # 0123456789
+    0b00000000,
+    0b00000001,
+    0b00000011,
+    0b00000111,
+    0b00001111,
+    0b00011111,
+    0b00111111,
+    0b01111111,
 ]
 
-# The TM1651's maximum frequency is 500 kHz with a 50% duty cycle.
+# The IC's maximum frequency is 500 kHz with a 50% duty cycle.
 # We take a conservative clock cycle here.
-TM1651_CYCLE = 0.000050  # 50 microseconds
+CLOCK_CYCLE = 0.000050  # 50 microseconds
 
 
 class Command(IntEnum):
@@ -60,19 +61,19 @@ class Brightness(IntEnum):
 
 
 class BatteryDisplay:
-    """Class to control the TM1651 battery display.
+    """Class to control the TM1651/TM1637 battery display.
 
-    The TM1651 chip communicates using a two-line serial bus interface.
+    The IC communicates using a two-line serial bus interface.
 
-    Pins SEG1 to SEG7 (2-8) are connected to segments 1 to 7 of the display.
+    Pins SEG1 to SEG7/SEG8 are connected to segments 1 to 7/8 of the display.
 
-    From pins GRID4 to GRID1 (9-12), only GRID1 is connected to the display.
+    From pins GRID1 to GRID4/GRID6, only GRID1 is connected to the display.
 
-    Pin K1 (for key input) is not connected.
+    Pins K1 and K2 (for key input, the latter only for the TM1637) are not connected.
     """
 
-    def __init__(self, clock_pin=24, data_pin=23):
-        """Initialize the TM1651 battery display object.
+    def __init__(self, clock_pin=24, data_pin=23, segments=7):
+        """Initialize the battery display object.
 
         clock_pin and data_pin should be BCM pin numbers from 0 to 27."""
         if clock_pin not in range(28):
@@ -85,6 +86,10 @@ class BatteryDisplay:
             raise InvalidPinError(data_pin, "Data pin should be a number from 0 to 27.")
         self.data_pin = data_pin
 
+        if segments + 1 not in range(8):
+            raise InvalidSegmentsError(segments)
+        self.segments = segments
+
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(clock_pin, OUT)
         GPIO.setup(data_pin, OUT)
@@ -92,7 +97,7 @@ class BatteryDisplay:
         self.set_brightness(Brightness.DARK)
         ack = self.clear_display()
 
-        # If the TM1651 hasn't returned an ACK,
+        # If the IC hasn't returned an ACK,
         # assume that no LED controller is connected on these pins.
         if not ack:
             raise NoDisplayFoundError(clock_pin, data_pin)
@@ -114,9 +119,9 @@ class BatteryDisplay:
         self.brightness = brightness
 
     def send_command(self, *data):
-        """Send a command and optional data to the TM1651.
+        """Send a command and optional data to the IC.
 
-        Returns True if the TM1651 has sent an ACK after each written byte."""
+        Returns True if the IC has sent an ACK after each written byte."""
         ack = True
 
         self.start()
@@ -129,16 +134,16 @@ class BatteryDisplay:
     def clear_display(self):
         """Clear the display.
 
-        Returns True if the TM1651 has sent an ACK after the write."""
+        Returns True if the IC has sent an ACK after the write."""
         return self.set_level(0)
 
     def set_level(self, level):
         """Display a level on the battery display.
 
-        level should be an integer from 0 to 7.
+        level should be an integer from 0 to the number of LED segments.
 
-        Returns True if the TM1651 has sent an ACK after every write."""
-        if level not in range(8):
+        Returns True if the IC has sent an ACK after every write."""
+        if level not in range(self.segments):
             raise InvalidLevelError(level)
 
         ack = True
@@ -152,16 +157,16 @@ class BatteryDisplay:
     def half_cycle_clock_low(self, write_data):
         """Start the first half cycle when the clock is low and write a data bit."""
         self.set_clock(LOW)
-        sleep(TM1651_CYCLE / 4)
+        sleep(CLOCK_CYCLE / 4)
 
         self.set_data(write_data)
-        sleep(TM1651_CYCLE / 4)
+        sleep(CLOCK_CYCLE / 4)
 
     def half_cycle_clock_high(self):
         """Start the second half cycle when the clock is high."""
 
         self.set_clock(HIGH)
-        sleep(TM1651_CYCLE / 2)
+        sleep(CLOCK_CYCLE / 2)
 
     def half_cycle_clock_high_ack(self):
         """Start the second half cycle when the clock is high and check for the ack.
@@ -170,29 +175,29 @@ class BatteryDisplay:
 
         # Set CLK high.
         self.set_clock(HIGH)
-        sleep(TM1651_CYCLE / 4)
+        sleep(CLOCK_CYCLE / 4)
 
         # Set DIO to input mode and check the ack.
         GPIO.setup(self.data_pin, IN)
         ack = GPIO.input(self.data_pin)
 
         # ack (DIO) should be LOW now
-        # Now we have to set it to LOW ourselves before the TM1651
+        # Now we have to set it to LOW ourselves before the IC
         # releases the port line at the next clock cycle.
         GPIO.setup(self.data_pin, OUT)
         if not ack:
             self.set_data(LOW)
 
-        sleep(TM1651_CYCLE / 4)
+        sleep(CLOCK_CYCLE / 4)
         # Set CLK to low again so it can begin the next cycle.
         self.set_clock(LOW)
 
         return ack
 
     def write_byte(self, write_data):
-        """Write a byte to the TM1651.
+        """Write a byte to the IC.
 
-        Returns True if the TM1651 has sent an ack after the write."""
+        Returns True if the IC has sent an ack after the write."""
         # Send 8 data bits, LSB first.
         # A data bit can only be written to DIO when CLK is LOW.
         # E.g. write 1 to DIO:
@@ -207,7 +212,7 @@ class BatteryDisplay:
 
         # After writing 8 bits, start a 9th clock ycle.
         # During the 9th half-cycle of CLK when it is LOW,
-        # if we set DIO to HIGH the TM1651 gives an ack by
+        # if we set DIO to HIGH the IC gives an ack by
         # pulling DIO LOW:
         # CLK ____████
         # DIO __█_____
@@ -217,29 +222,29 @@ class BatteryDisplay:
         return not self.half_cycle_clock_high_ack()
 
     def delineate_transmission(self, begin):
-        """Delineate a data transmission to the TM1651.
+        """Delineate a data transmission to the IC.
 
         The begin parameter is a boolean with the start value of DIO.
         """
         # DIO changes its value while CLK is HIGH.
         self.set_data(begin)
-        sleep(TM1651_CYCLE / 2)
+        sleep(CLOCK_CYCLE / 2)
 
         self.set_clock(HIGH)
-        sleep(TM1651_CYCLE / 4)
+        sleep(CLOCK_CYCLE / 4)
 
         self.set_data(not begin)
-        sleep(TM1651_CYCLE / 4)
+        sleep(CLOCK_CYCLE / 4)
 
     def start(self):
-        """Start a data transmission to the TM1651."""
+        """Start a data transmission to the IC."""
         # DIO changes from HIGH to low while CLK is high.
         # CLK ____████
         # DIO ██████__
         self.delineate_transmission(HIGH)
 
     def stop(self):
-        """Stop a data transmission to the TM1651."""
+        """Stop a data transmission to the IC."""
         # DIO changes from LOW to HIGH while CLK is HIGH.
         # CLK ____████
         # DIO ______██
